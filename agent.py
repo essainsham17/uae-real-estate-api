@@ -11,6 +11,8 @@ load_dotenv()
 GROQ_API_KEY=os.getenv("GROQ_API_KEY")
 
 llm=ChatGroq(model='llama-3.3-70b-versatile', temperature=0)
+prediction_model=joblib.load("uae_real_estate_model.pkl")
+columns=joblib.load("model_columns.pkl")
 
 class AgentState(TypedDict):
     user_query:str
@@ -51,9 +53,6 @@ def Predictor(state: AgentState):
     location=state["Location"]
     n_bedrooms=state["Bedrooms"]
 
-    prediction_model=joblib.load("uae_real_estate_model.pkl")
-    columns=joblib.load("model_columns.pkl")
-
     df=pd.DataFrame({col: 0 for col in columns},index=[0])
     if location in columns:
         df[location]=1
@@ -81,12 +80,12 @@ def Generate_Response(state: AgentState):
     down_payment=state['down_payment']
     monthly_payment=state['monthly_payment']
 
-    prompt=f'''
+    prompt=f"""
     you are a UAE real estate AI. generate a professional response to the users query:{query}.
     Compare the users expected price in the query with the actual model predicted price = {price}.
     also consider the location {location}.
     Also give the client about the down payment of the property is {down_payment} which is 20% of the total price.
-    Monthly payment for 25 years with 4.5% interest rate is calculated at {monthly_payment}'''
+    Monthly payment for 25 years with 4.5% interest rate is calculated at {monthly_payment}. incluse the name as Essa Insham BV"""
 
     response=llm.invoke(prompt)
 
@@ -103,7 +102,7 @@ workflow.add_edge(START,"extractor")
 workflow.add_edge("extractor","perdictor")
 workflow.add_edge("perdictor","Mortgage")
 workflow.add_edge("Mortgage","responder")
-workflow.add_edge('Mortgage',END)
+workflow.add_edge('responder',END)
 
 real_estate_agent=workflow.compile()
 

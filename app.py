@@ -1,26 +1,24 @@
-import streamlit as st
+from fastapi import FastAPI
+from pydantic import BaseModel
 from agent import real_estate_agent
 
-st.set_page_config('UAE Real Estate AI', page_icon='🏘️')
+app = FastAPI()
 
-st.title('UAE Real Estate AI Advisor 🇦🇪')
-st.markdown("Your intelligent guide to Dubai and Abu Dhabi property valuations.")
+class UserQuery(BaseModel):
+    user_message: str = 'essa'
+    thread_id: str = 'default_session'
 
-if "messages" not in st.session_state:
-    st.session_state.messages=[]
+class ChatResponse(BaseModel):
+    ai_response: str
 
-for message in st.session_state.messages:
-    with st.chat_message(message["role"]):
-        st.markdown(message['content'])
+@app.post('/chat',response_model=ChatResponse)
+async def handle_chat(request: UserQuery):
+    current_message=request.user_message
+    current_thread=request.thread_id
 
-if prompt := st.chat_input('Ask me about a property'):
-    with st.chat_message("user"):
-        st.markdown(prompt)
-        st.session_state.messages.append({'role':'user','content':prompt})
-    with st.spinner("Analyzing UAE market data...."):
-        user_input={'user_query':prompt}
-        final_state=real_estate_agent.invoke(user_input)
-        ai_response=final_state['final_response']
-    with st.chat_message('assistant'):
-        st.markdown(ai_response)
-        st.session_state.messages.append({'role':'assistant','content':ai_response})
+    inputs={"user_query":current_message}
+
+    result=await real_estate_agent.ainvoke(inputs)
+    answer=result["final_response"]
+    
+    return {"ai_response": answer}

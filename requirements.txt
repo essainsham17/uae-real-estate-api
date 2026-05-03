@@ -1,6 +1,9 @@
-streamlit
+fastapi
+uvicorn
 langchain-groq
 langgraph
-scikit-learn
+pandas
+numpy
 joblib
+scikit-learn
 python-dotenv
